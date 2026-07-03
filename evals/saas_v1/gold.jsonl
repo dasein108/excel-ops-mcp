@@ -1,0 +1,20 @@
+{"id": "q01_total_rev_y1", "expected": 1458480, "match": "relative", "tolerance": 0.005, "unit": "USD", "source_ref": "saas.xlsx#Dashboard!B5 (=SUM('P&L Projection'!B7:M7))"}
+{"id": "q02_total_rev_y5", "expected": 3127444.992, "match": "relative", "tolerance": 0.005, "unit": "USD", "source_ref": "saas.xlsx#Dashboard!F5"}
+{"id": "q03_subs_rev_y5", "expected": 2282486.1696, "match": "relative", "tolerance": 0.005, "unit": "USD", "source_ref": "saas.xlsx#'Revenue Model'!Q11"}
+{"id": "q04_gross_margin_y1", "expected": 0.7675, "match": "absolute", "tolerance": 0.01, "unit": "fraction", "source_ref": "saas.xlsx#Dashboard!B7"}
+{"id": "q05_ebitda_y1", "expected": -36406.4, "match": "relative", "tolerance": 0.02, "unit": "USD", "source_ref": "saas.xlsx#Dashboard!B8 (=SUM('P&L Projection'!B36:M36))"}
+{"id": "q06_first_profitable_month", "expected": "Sep", "match": "enum", "accept": ["sep", "september", "month 9", "9"], "source_ref": "saas.xlsx#Dashboard!B15 (break-even month 9)"}
+{"id": "q07_net_income_y1", "expected": -102081.912, "match": "relative", "tolerance": 0.02, "unit": "USD", "source_ref": "saas.xlsx#Dashboard!B10 (=SUM('P&L Projection'!B51:M51))"}
+{"id": "q08_closing_cash_y1", "expected": -51564.478, "match": "relative", "tolerance": 0.02, "unit": "USD", "source_ref": "saas.xlsx#'Cash Flow'!M29"}
+{"id": "q09_lowest_cash_y1", "expected": -86975.307, "match": "relative", "tolerance": 0.02, "unit": "USD", "source_ref": "saas.xlsx#'Cash Flow'!I29 (min of B29:M29)"}
+{"id": "q10_subs_share_y1", "expected": 0.738, "match": "absolute", "tolerance": 0.02, "unit": "fraction", "source_ref": "saas.xlsx#'Revenue Model' rows 11 vs 23 (1076400/1458480)"}
+{"id": "q11_yoy_growth_y2", "expected": 0.20, "match": "absolute", "tolerance": 0.005, "unit": "fraction", "source_ref": "saas.xlsx#Assumptions!B27"}
+{"id": "q12_payroll_pct_rev_y1", "expected": 0.5685, "match": "absolute", "tolerance": 0.03, "unit": "fraction", "source_ref": "saas.xlsx#'P&L Projection' row 21 (829200) / Dashboard!B5 (1458480)"}
+{"id": "q13_infra_cogs_y1", "expected": 226044, "match": "relative", "tolerance": 0.01, "unit": "USD", "source_ref": "saas.xlsx#'P&L Projection'!B9:M9"}
+{"id": "q14_headcount", "expected": 20, "match": "absolute", "tolerance": 0, "unit": "people", "source_ref": "saas.xlsx#Assumptions!B39:B46 (1+1+4+6+2+2+2+2)"}
+{"id": "q15_avg_mrr", "expected": 28, "match": "absolute", "tolerance": 0.001, "unit": "USD", "source_ref": "saas.xlsx#Assumptions!B8"}
+{"id": "q16_dashboard_rev_source", "expected": "P&L Projection Total Revenue", "match": "contains_all_groups", "groups": [["p&l", "p and l", "p_l", "profit"], ["revenue", "row 7", "total revenue"]], "source_ref": "saas.xlsx#Dashboard!B5 -> 'P&L Projection'!B7:M7"}
+{"id": "q17_churn_assumption", "expected": 2.5, "match": "percent_or_fraction", "tolerance": 0.001, "unit": "percent", "source_ref": "saas.xlsx#Assumptions!B7"}
+{"id": "q18_net_income_formula", "expected": "EBT minus Income Tax", "match": "contains_all_groups", "groups": [["ebt", "earnings before tax", "pre-tax"], ["income tax", "tax"]], "source_ref": "saas.xlsx#'P&L Projection'!B51 (=B47-B49)"}
+{"id": "q19_churn_bump_impact", "expected": "up", "match": "enum", "accept": ["up", "higher", "increase", "increases", "rise", "rises", "more", "grows"], "source_ref": "MODEL BUG: 'Revenue Model'!B9 =Assumptions!B6*B7*B4*B8*B10 multiplies churn (B7) in as a positive factor (not a 1-churn decay), so 2.5->3.0 scales subscription revenue x1.2 (up). Correct real-world behavior would be down; this workbook is mis-built."}
+{"id": "q20_cash_nonneg_y1", "expected": "yes", "match": "enum", "accept": ["yes", "negative", "goes negative", "does go negative", "it does"], "source_ref": "saas.xlsx#'Cash Flow'!B29:M29 (min -86975)"}

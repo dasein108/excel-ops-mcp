@@ -1,0 +1,20 @@
+{"id": "q01_total_rev_y1", "question": "What is the total revenue in Year 1 (sum of all 12 months)?", "kind": "numeric"}
+{"id": "q02_total_rev_y5", "question": "What is the total revenue in Year 5?", "kind": "numeric"}
+{"id": "q03_subs_rev_y5", "question": "What is the total subscription revenue in Year 5?", "kind": "numeric"}
+{"id": "q04_gross_margin_y1", "question": "What is the gross margin percentage in Year 1 (as a fraction, e.g. 0.75)?", "kind": "numeric"}
+{"id": "q05_ebitda_y1", "question": "What is the EBITDA for Year 1?", "kind": "numeric"}
+{"id": "q06_first_profitable_month", "question": "In which calendar month of Year 1 does the business first become profitable (positive net income)? Answer with the month name.", "kind": "enum"}
+{"id": "q07_net_income_y1", "question": "What is the net income for Year 1?", "kind": "numeric"}
+{"id": "q08_closing_cash_y1", "question": "What is the closing cash balance at the end of Year 1 (end of month 12)?", "kind": "numeric"}
+{"id": "q09_lowest_cash_y1", "question": "What is the lowest monthly closing cash balance during Year 1?", "kind": "numeric"}
+{"id": "q10_subs_share_y1", "question": "What fraction of Year-1 total revenue comes from subscriptions (as a fraction, e.g. 0.70)?", "kind": "numeric"}
+{"id": "q11_yoy_growth_y2", "question": "What is the year-over-year revenue growth rate in Year 2 (as a fraction)?", "kind": "numeric"}
+{"id": "q12_payroll_pct_rev_y1", "question": "What is total labor cost as a fraction of Year-1 total revenue?", "kind": "numeric"}
+{"id": "q13_infra_cogs_y1", "question": "What is the total Infrastructure COGS in Year 1?", "kind": "numeric"}
+{"id": "q14_headcount", "question": "What is the total planned headcount across all roles?", "kind": "numeric"}
+{"id": "q15_avg_mrr", "question": "What is the assumed Average MRR per Customer?", "kind": "numeric"}
+{"id": "q16_dashboard_rev_source", "question": "Which sheet and line item does the Dashboard 'Total Revenue' figure pull from?", "kind": "trace"}
+{"id": "q17_churn_assumption", "question": "What is the assumed Monthly Churn Rate?", "kind": "numeric_pct"}
+{"id": "q18_net_income_formula", "question": "How is Net Income computed on the P&L (which two line items)?", "kind": "trace"}
+{"id": "q19_churn_bump_impact", "question": "If the Monthly Churn Rate assumption is raised from 2.5% to 3.0%, does Year-1 total revenue go up or down?", "kind": "direction"}
+{"id": "q20_cash_nonneg_y1", "question": "Does the closing cash balance ever go negative during Year 1? Answer yes or no.", "kind": "boolean"}

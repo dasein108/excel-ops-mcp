@@ -1,0 +1,59 @@
+[project]
+name = "excel-mcp"
+dynamic = ["version"]
+description = "Excel-focused MCP with workbook sessions, DuckDB SQL reads, and safe write contracts."
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+authors = [
+  { name = "Excel MCP Contributors" },
+]
+keywords = ["excel", "mcp", "duckdb", "xlsx", "spreadsheet", "cli"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Financial and Insurance Industry",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Topic :: Office/Business :: Financial :: Spreadsheet",
+]
+dependencies = [
+  "duckdb>=1.1.0",
+  "mcp>=1.2.0",
+  "openpyxl>=3.1.0",
+  "pydantic>=2.7.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/dasein108/excel-mcp"
+Repository = "https://github.com/dasein108/excel-mcp"
+Issues = "https://github.com/dasein108/excel-mcp/issues"
+
+[project.optional-dependencies]
+dev = [
+  "PyYAML>=6.0.0",
+  "pytest>=8.0.0",
+]
+# Optional formula recompute fallback for cells with no cached value (e.g. files
+# written programmatically that were never opened in a spreadsheet app).
+recompute = [
+  "formulas>=1.3.0",
+]
+
+[project.scripts]
+excel-mcp = "excel_mcp.server:main"
+excel-ops = "excel_mcp.cli:main"
+
+[build-system]
+requires = ["hatchling", "hatch-vcs"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "vcs"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

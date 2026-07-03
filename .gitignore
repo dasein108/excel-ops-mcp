@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+*.egg
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Test / tool caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.excel-ops-cache/
+**/.cache/
+
+# Runtime session state
+*.sqlite3
+
+# Generated eval run outputs (keep suite definitions, drop run history)
+evals/**/runs/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local machine-specific tool state (keep shared skills, drop local settings)
+.claude/settings.local.json

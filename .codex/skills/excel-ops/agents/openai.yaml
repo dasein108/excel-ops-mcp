@@ -1,0 +1,3 @@
+display_name: Excel Ops
+short_description: Use excel-ops CLI for safe Excel work.
+default_prompt: Use excel-ops to inspect or safely edit an Excel workbook in this project.
