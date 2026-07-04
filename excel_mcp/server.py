@@ -1,6 +1,40 @@
 from __future__ import annotations
 
+import argparse
+import os
+from pathlib import Path
+
+from excel_mcp.config import ExcelMcpConfig
 from excel_mcp.tools import ExcelMcpTools
+
+
+def resolve_config(argv: list[str] | None = None, environ: dict | None = None) -> ExcelMcpConfig:
+    """Build server config from CLI args and environment.
+
+    Allowed roots come from ``--allowed-root`` (repeatable) and the
+    ``EXCEL_MCP_ALLOWED_ROOTS`` env var (os.pathsep-separated). When neither is
+    set, default to the user's HOME directory — a GUI host (e.g. Claude Desktop)
+    launches the server with an unhelpful working directory (often ``/``), so
+    ``Path.cwd()`` would block every real workbook.
+    """
+    environ = os.environ if environ is None else environ
+    parser = argparse.ArgumentParser(prog="excel-ops-mcp", add_help=False)
+    parser.add_argument("--allowed-root", action="append", default=[], dest="allowed_roots")
+    parser.add_argument("--cache-dir", default=None)
+    args, _ = parser.parse_known_args(argv)
+
+    roots: list[str] = list(args.allowed_roots)
+    env_roots = environ.get("EXCEL_MCP_ALLOWED_ROOTS")
+    if env_roots:
+        roots.extend(p for p in env_roots.split(os.pathsep) if p)
+    if not roots:
+        roots = [str(Path.home())]
+
+    kwargs: dict = {"allowed_roots": [Path(r) for r in roots]}
+    cache_dir = args.cache_dir or environ.get("EXCEL_MCP_CACHE_DIR")
+    if cache_dir:
+        kwargs["cache_dir"] = Path(cache_dir)
+    return ExcelMcpConfig(**kwargs)
 
 
 def main() -> None:
@@ -10,7 +44,7 @@ def main() -> None:
         raise SystemExit("The 'mcp' package is required to run the MCP server.") from exc
 
     app = FastMCP("excel-mcp")
-    tools = ExcelMcpTools()
+    tools = ExcelMcpTools(resolve_config())
 
     @app.tool()
     def spreadsheet_open(path: str) -> dict:

@@ -128,6 +128,37 @@ For local development:
 }
 ```
 
+### Allowed roots (which files the server may touch)
+
+For safety the server only reads and writes `.xlsx` files under its **allowed
+roots**. When launched by a desktop host the working directory is unhelpful
+(often `/`), so the server defaults its allowed root to your **home directory** —
+enough to open and save workbooks anywhere under `~`.
+
+To restrict or extend that, set `EXCEL_MCP_ALLOWED_ROOTS` (os.pathsep-separated:
+`:` on macOS/Linux, `;` on Windows) in the server's `env`:
+
+```json
+{
+  "mcpServers": {
+    "excel-mcp": {
+      "command": "uvx",
+      "args": ["excel-ops-mcp"],
+      "env": { "EXCEL_MCP_ALLOWED_ROOTS": "/Users/you/Documents:/Users/you/work" }
+    }
+  }
+}
+```
+
+Equivalently, pass `--allowed-root <dir>` (repeatable) in `args`. Writes still go
+to a new file by default and never overwrite the source unless you ask.
+
+> **macOS note:** if the host app is sandboxed, macOS may additionally block the
+> server from reading `~/Desktop`, `~/Documents`, or `~/Downloads` until you grant
+> the app Files-and-Folders (or Full Disk) access in System Settings → Privacy &
+> Security. An empty read with a permission error there is an OS gate, not an
+> allowed-root problem.
+
 ## MCP Tools
 
 ### `spreadsheet_open`
