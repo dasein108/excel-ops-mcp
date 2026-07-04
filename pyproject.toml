@@ -1,5 +1,5 @@
 [project]
-name = "excel-mcp"
+name = "excel-ops-mcp"
 dynamic = ["version"]
 description = "Excel-focused MCP with workbook sessions, DuckDB SQL reads, and safe write contracts."
 readme = "README.md"
