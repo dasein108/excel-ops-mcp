@@ -23,13 +23,13 @@ Google Sheets and Apple Numbers are not supported in this phase.
 If `uv` is installed, run the MCP server without creating a virtual environment:
 
 ```bash
-uvx excel-mcp
+uvx excel-ops-mcp
 ```
 
 Run the CLI without a persistent install:
 
 ```bash
-uvx --from excel-mcp excel-ops sheets workbook.xlsx
+uvx --from excel-ops-mcp excel-ops sheets workbook.xlsx
 ```
 
 ### Install `uv`
@@ -56,10 +56,10 @@ After installation, restart your shell if `uvx` is not found.
 
 ### Persistent CLI Install
 
-Use `pipx` if you want `excel-mcp` and `excel-ops` installed persistently:
+Use `pipx` if you want `excel-ops-mcp` and `excel-ops` installed persistently:
 
 ```bash
-pipx install excel-mcp
+pipx install excel-ops-mcp
 excel-ops sheets workbook.xlsx
 ```
 
@@ -83,7 +83,7 @@ For MCP hosts that support command-based servers:
   "mcpServers": {
     "excel-mcp": {
       "command": "uvx",
-      "args": ["excel-mcp"]
+      "args": ["excel-ops-mcp"]
     }
   }
 }
@@ -95,7 +95,7 @@ For local development:
 {
   "mcpServers": {
     "excel-mcp": {
-      "command": "/absolute/path/to/excel_mcp/.venv/bin/excel-mcp"
+      "command": "/absolute/path/to/excel_mcp/.venv/bin/excel-ops-mcp"
     }
   }
 }
@@ -194,7 +194,7 @@ spreadsheet app), the cell returns null with a `computed_value_unavailable`
 warning; install the recompute extra to evaluate it:
 
 ```bash
-pip install 'excel-mcp[recompute]'
+pip install 'excel-ops-mcp[recompute]'
 ```
 
 ### `spreadsheet_trace`

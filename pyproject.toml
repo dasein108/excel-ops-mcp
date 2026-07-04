@@ -44,7 +44,7 @@ recompute = [
 ]
 
 [project.scripts]
-excel-mcp = "excel_mcp.server:main"
+excel-ops-mcp = "excel_mcp.server:main"
 excel-ops = "excel_mcp.cli:main"
 
 [build-system]

@@ -69,7 +69,7 @@ If a cell returns null with a `computed_value_unavailable` warning, the file has
 cached value for it. Install the recompute extra to evaluate formulas directly:
 
 ```bash
-pip install 'excel-mcp[recompute]'
+pip install 'excel-ops-mcp[recompute]'
 ```
 
 ## Trace Formula Lineage

@@ -1,6 +1,6 @@
 # Development Guide
 
-This guide covers local development, testing, packaging, and PyPI publishing for `excel-mcp`.
+This guide covers local development, testing, packaging, and PyPI publishing for `excel-ops-mcp`.
 
 ## Local Setup
 
@@ -25,7 +25,7 @@ excel-ops sheets examples/saas.xlsx --pretty
 Run the MCP server:
 
 ```bash
-excel-mcp
+excel-ops-mcp
 ```
 
 ## Project Surfaces
@@ -85,7 +85,7 @@ Do not store PyPI API tokens in GitHub secrets unless trusted publishing is unav
 
 On PyPI:
 
-1. Create the `excel-mcp` project, or publish the first release manually if required by PyPI policy.
+1. Create the `excel-ops-mcp` project, or publish the first release manually if required by PyPI policy.
 2. Go to the project publishing settings.
 3. Add a trusted publisher:
    - Owner: GitHub repository owner.
@@ -115,8 +115,8 @@ twine check dist/*
 9. Verify:
 
 ```bash
-uvx excel-mcp --help
-uvx --from excel-mcp excel-ops --help
+uvx excel-ops-mcp --help
+uvx --from excel-ops-mcp excel-ops --help
 ```
 
 ## Manual PyPI Fallback
