@@ -32,6 +32,24 @@ Run the CLI without a persistent install:
 uvx --from excel-ops-mcp excel-ops sheets workbook.xlsx
 ```
 
+### One-command install (all agents)
+
+Bootstraps `uv` if needed, then opens a picker to install `excel-ops-mcp` into
+Claude Desktop, Claude Code, Codex, Gemini CLI, Cursor, and/or Windsurf:
+
+```bash
+curl -LsSf https://raw.githubusercontent.com/dasein108/excel-ops-mcp/main/install.sh | sh
+```
+
+Windows (PowerShell):
+
+```powershell
+powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/dasein108/excel-ops-mcp/main/install.ps1 | iex"
+```
+
+Non-interactive: `... | sh -s -- --agents cursor,claude-code --yes`.
+Preview only: add `--dry-run`. List detection: `--list`.
+
 ### Install `uv`
 
 macOS/Linux:

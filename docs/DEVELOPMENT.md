@@ -7,8 +7,12 @@ This guide covers local development, testing, packaging, and PyPI publishing for
 ```bash
 python -m venv .venv
 . .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,install]"
 ```
+
+The cross-agent installer lives in `excel_mcp/installer/` and its deps
+(`questionary`, `tomlkit`) are under the optional `install` extra — install both
+`dev` and `install` extras for local work, as shown above.
 
 Run tests:
 
