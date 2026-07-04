@@ -44,7 +44,6 @@ recompute = [
 ]
 # Dependencies for the cross-agent installer (excel_mcp/installer/).
 install = [
-  "questionary>=2.0",
   "tomlkit>=0.12",
 ]
 

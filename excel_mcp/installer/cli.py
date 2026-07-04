@@ -49,18 +49,6 @@ def _print_summary(results: list[ApplyResult]) -> None:
             print(f"  ✗ {r.key}: {r.error}")
 
 
-def _reconcile(adapters, selected: set[str], installed: set[str], spec, *, dry_run: bool) -> list[ApplyResult]:
-    results: list[ApplyResult] = []
-    for a in adapters:
-        want = a.key in selected
-        have = a.key in installed
-        if want and not have:
-            results.append(a.apply(spec, dry_run=dry_run))
-        elif have and not want:
-            results.append(a.remove(dry_run=dry_run))
-    return results
-
-
 def main(argv: list[str] | None = None) -> int:
     args = _parse(argv)
     if args.version:
@@ -105,16 +93,22 @@ def main(argv: list[str] | None = None) -> int:
         _print_summary(results)
         return 1 if any(not r.ok for r in results) else 0
 
-    # Interactive: pick the desired set, then reconcile against what's installed.
+    # Interactive: choose install/uninstall, pick agents (nothing checked by default).
     if not sys.stdin.isatty():
         print("No terminal available. Use --agents KEYS to install or --uninstall KEYS to remove.")
         print("Run with --list to see agent keys and status.")
         return 0
 
-    from .tui import select_agents
+    from .tui import run_interactive
 
-    selected = set(select_agents(adapters, detected, installed))
-    results = _reconcile(adapters, selected, installed, spec, dry_run=args.dry_run)
+    mode, keys = run_interactive(adapters, detected, installed)
+    if not keys:
+        print("No agents selected. Nothing to do.")
+        return 0
+    if mode == "uninstall":
+        results = [adapter_by_key(k).remove(dry_run=args.dry_run) for k in keys]
+    else:
+        results = [adapter_by_key(k).apply(spec, dry_run=args.dry_run) for k in keys]
     _print_summary(results)
     return 1 if any(not r.ok for r in results) else 0
 

@@ -52,20 +52,26 @@ def test_uninstall_flag_removes(fake_home, capsys):
     assert "excel-ops-mcp" not in json.loads(cfg.read_text())["mcpServers"]
 
 
-def test_interactive_reconcile_installs_and_uninstalls(fake_home, monkeypatch):
-    # Pre-install into windsurf; leave cursor uninstalled.
-    main(["--agents", "windsurf"])
-    windsurf_cfg = fake_home / ".codeium" / "windsurf" / "mcp_config.json"
+def test_interactive_install_mode_installs_checked(fake_home, monkeypatch):
     cursor_cfg = fake_home / ".cursor" / "mcp.json"
-    assert "excel-ops-mcp" in json.loads(windsurf_cfg.read_text())["mcpServers"]
-
-    # Desired end state: cursor checked, windsurf UNchecked → install cursor, remove windsurf.
     monkeypatch.setattr("sys.stdin.isatty", lambda: True)
-    monkeypatch.setattr(tui, "select_agents", lambda adapters, detected, installed: ["cursor"])
-
+    monkeypatch.setattr(tui, "run_interactive",
+                        lambda adapters, detected, installed: ("install", ["cursor"]))
     rc = main([])
     assert rc == 0
     assert "excel-ops-mcp" in json.loads(cursor_cfg.read_text())["mcpServers"]
+
+
+def test_interactive_uninstall_mode_removes_checked(fake_home, monkeypatch):
+    main(["--agents", "windsurf"])  # install first
+    windsurf_cfg = fake_home / ".codeium" / "windsurf" / "mcp_config.json"
+    assert "excel-ops-mcp" in json.loads(windsurf_cfg.read_text())["mcpServers"]
+
+    monkeypatch.setattr("sys.stdin.isatty", lambda: True)
+    monkeypatch.setattr(tui, "run_interactive",
+                        lambda adapters, detected, installed: ("uninstall", ["windsurf"]))
+    rc = main([])
+    assert rc == 0
     assert "excel-ops-mcp" not in json.loads(windsurf_cfg.read_text())["mcpServers"]
 
 
