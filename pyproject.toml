@@ -28,9 +28,9 @@ dependencies = [
 ]
 
 [project.urls]
-Homepage = "https://github.com/dasein108/excel-mcp"
-Repository = "https://github.com/dasein108/excel-mcp"
-Issues = "https://github.com/dasein108/excel-mcp/issues"
+Homepage = "https://github.com/dasein108/excel-ops-mcp"
+Repository = "https://github.com/dasein108/excel-ops-mcp"
+Issues = "https://github.com/dasein108/excel-ops-mcp/issues"
 
 [project.optional-dependencies]
 dev = [
