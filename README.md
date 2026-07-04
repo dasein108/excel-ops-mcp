@@ -88,13 +88,17 @@ git clone <repo-url>
 cd excel_mcp
 python -m venv .venv
 . .venv/bin/activate
-pip install -e ".[dev]"
+pip install -e ".[dev,install]"
 pytest -v
 ```
 
 ## MCP Configuration
 
-For MCP hosts that support command-based servers:
+The fastest way to configure any supported host (Claude Desktop, Claude Code,
+Codex, Gemini CLI, Cursor, Windsurf) is the [one-command installer](#one-command-install-all-agents),
+which writes the correct config for each agent automatically.
+
+To configure a host manually, for MCP hosts that support command-based servers:
 
 ```json
 {
