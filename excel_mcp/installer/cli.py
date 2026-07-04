@@ -85,3 +85,7 @@ def main(argv: list[str] | None = None) -> int:
 
     _print_summary(results)
     return 1 if any(not r.ok for r in results) else 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
