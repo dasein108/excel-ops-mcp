@@ -22,7 +22,10 @@ def _parse(argv: list[str] | None) -> argparse.Namespace:
 def _select_keys(args, adapters, detected) -> list[str]:
     if args.agents:
         return [k.strip() for k in args.agents.split(",") if k.strip()]
-    if args.yes or not sys.stdout.isatty():
+    # The picker reads keystrokes from stdin; only launch it when stdin is a
+    # real terminal. Under `curl | sh` stdin is the pipe (not a tty) unless the
+    # bootstrap reattaches /dev/tty.
+    if args.yes or not sys.stdin.isatty():
         return sorted(detected)
     from .tui import select_agents
 

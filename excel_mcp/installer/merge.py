@@ -5,6 +5,7 @@ import shutil
 from pathlib import Path
 
 import tomlkit
+from tomlkit.exceptions import ParseError as TomlParseError
 
 from .errors import MalformedConfig
 
@@ -50,7 +51,7 @@ def toml_upsert_server(path: Path, name: str, command: str, args: list[str]) -> 
         if text.strip():
             try:
                 doc = tomlkit.parse(text)
-            except Exception as exc:  # tomlkit raises tomlkit.exceptions.ParseError
+            except TomlParseError as exc:
                 raise MalformedConfig(f"{path}: {exc}") from exc
         else:
             doc = tomlkit.document()
