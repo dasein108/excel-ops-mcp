@@ -42,10 +42,16 @@ dev = [
 recompute = [
   "formulas>=1.3.0",
 ]
+# Dependencies for the cross-agent installer (excel_mcp/installer/).
+install = [
+  "questionary>=2.0",
+  "tomlkit>=0.12",
+]
 
 [project.scripts]
 excel-ops-mcp = "excel_mcp.server:main"
 excel-ops = "excel_mcp.cli:main"
+excel-ops-mcp-install = "excel_mcp.installer.cli:main"
 
 [build-system]
 requires = ["hatchling", "hatch-vcs"]
