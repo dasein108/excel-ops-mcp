@@ -17,8 +17,24 @@ class ClaudeCodeCliAdapter(Adapter):
     def detect(self) -> bool:
         return shutil.which("claude") is not None
 
+    def is_installed(self) -> bool:
+        if shutil.which("claude") is None:
+            return False
+        proc = _run(["claude", "mcp", "get", "excel-ops-mcp"], capture_output=True, text=True)
+        return proc.returncode == 0
+
     def target(self) -> str | None:
         return "claude mcp add --scope user"
+
+    def remove(self, *, dry_run: bool) -> ApplyResult:
+        cmd = ["claude", "mcp", "remove", "--scope", "user", "excel-ops-mcp"]
+        if dry_run:
+            return ApplyResult(self.key, True, "dry-run", None, None, note=" ".join(cmd))
+        proc = _run(cmd, capture_output=True, text=True)
+        if proc.returncode == 0:
+            return ApplyResult(self.key, True, "removed", None, None, note="claude mcp remove (user scope)")
+        # `claude mcp remove` fails when the entry doesn't exist — treat as already absent.
+        return ApplyResult(self.key, True, "absent", None, None)
 
     def apply(self, spec: ServerSpec, *, dry_run: bool) -> ApplyResult:
         add_cmd = ["claude", "mcp", "add", "--scope", "user", spec.name, "--", "uvx", *spec.args]

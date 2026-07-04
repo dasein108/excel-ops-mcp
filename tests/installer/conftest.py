@@ -1,6 +1,17 @@
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def _no_real_cli(monkeypatch):
+    """Never detect or shell out to a real agent CLI during tests.
+
+    Adapters use ``shutil.which`` to detect CLI agents and Claude Code shells
+    out to ``claude``; default both to absent so detection is deterministic and
+    no real subprocess runs. Tests that exercise CLI behavior re-patch as needed.
+    """
+    monkeypatch.setattr("shutil.which", lambda name: None)
+
+
 @pytest.fixture
 def fake_home(tmp_path, monkeypatch):
     home = tmp_path / "home"

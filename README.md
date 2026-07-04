@@ -47,8 +47,13 @@ Windows (PowerShell):
 powershell -ExecutionPolicy ByPass -c "irm https://raw.githubusercontent.com/dasein108/excel-ops-mcp/main/install.ps1 | iex"
 ```
 
-Non-interactive: `... | sh -s -- --agents cursor,claude-code --yes`.
-Preview only: add `--dry-run`. List detection: `--list`.
+The picker pre-checks agents that already have `excel-ops-mcp` (none on a fresh
+machine). Checking an agent installs it; **unchecking an installed agent
+uninstalls it**.
+
+Non-interactive: `... | sh -s -- --agents cursor,claude-code` to install, or
+`--uninstall cursor,claude-code` to remove. Preview with `--dry-run`; see status
+with `--list`.
 
 ### Install `uv`
 

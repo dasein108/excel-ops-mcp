@@ -3,6 +3,9 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 
+# The MCP server name this installer manages across every agent config.
+SERVER_NAME = "excel-ops-mcp"
+
 
 def resolve_uvx_path() -> str:
     found = shutil.which("uvx")
@@ -23,4 +26,4 @@ class ServerSpec:
 
 
 def default_spec() -> ServerSpec:
-    return ServerSpec("excel-ops-mcp", ("excel-ops-mcp",), resolve_uvx_path())
+    return ServerSpec(SERVER_NAME, (SERVER_NAME,), resolve_uvx_path())

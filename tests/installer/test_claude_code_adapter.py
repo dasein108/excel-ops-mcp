@@ -52,3 +52,41 @@ def test_detect_uses_which(monkeypatch):
     assert ClaudeCodeCliAdapter().detect() is True
     monkeypatch.setattr(cc.shutil, "which", lambda n: None)
     assert ClaudeCodeCliAdapter().detect() is False
+
+
+def test_is_installed_uses_mcp_get(monkeypatch):
+    monkeypatch.setattr(cc.shutil, "which", lambda n: "/usr/bin/claude")
+
+    def fake_run(cmd, **kw):
+        rc = 0 if cmd[:3] == ["claude", "mcp", "get"] else 1
+        return subprocess.CompletedProcess(cmd, rc, stdout="", stderr="")
+
+    monkeypatch.setattr(cc, "_run", fake_run)
+    assert ClaudeCodeCliAdapter().is_installed() is True
+
+
+def test_is_installed_false_when_claude_missing(monkeypatch):
+    monkeypatch.setattr(cc.shutil, "which", lambda n: None)
+    assert ClaudeCodeCliAdapter().is_installed() is False
+
+
+def test_remove_builds_command(monkeypatch):
+    calls = []
+
+    def fake_run(cmd, **kw):
+        calls.append(cmd)
+        return subprocess.CompletedProcess(cmd, 0, stdout="", stderr="")
+
+    monkeypatch.setattr(cc, "_run", fake_run)
+    result = ClaudeCodeCliAdapter().remove(dry_run=False)
+    assert result.ok and result.action == "removed"
+    assert calls[-1] == ["claude", "mcp", "remove", "--scope", "user", "excel-ops-mcp"]
+
+
+def test_remove_absent_on_nonzero(monkeypatch):
+    def fake_run(cmd, **kw):
+        return subprocess.CompletedProcess(cmd, 1, stdout="", stderr="no such server")
+
+    monkeypatch.setattr(cc, "_run", fake_run)
+    result = ClaudeCodeCliAdapter().remove(dry_run=False)
+    assert result.ok and result.action == "absent"

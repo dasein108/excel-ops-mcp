@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 import sys
 
-from .adapters.base import ApplyResult
+from .adapters.base import Adapter, ApplyResult
 from .registry import adapter_by_key, build_registry
 from .spec import default_spec
 
@@ -12,41 +12,53 @@ def _parse(argv: list[str] | None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="excel-ops-mcp-install",
                                 description="Install excel-ops-mcp into your LLM agents.")
     p.add_argument("--version", action="store_true", help="print version and exit")
-    p.add_argument("--list", action="store_true", help="list supported agents + detection, then exit")
+    p.add_argument("--list", action="store_true", help="list supported agents + status, then exit")
     p.add_argument("--dry-run", action="store_true", help="show what would change; write nothing")
-    p.add_argument("--yes", action="store_true", help="no prompt; apply to detected (or --agents) set")
-    p.add_argument("--agents", help="comma-separated agent keys to target")
+    p.add_argument("--agents", help="comma-separated agent keys to install (non-interactive)")
+    p.add_argument("--uninstall", help="comma-separated agent keys to remove (non-interactive)")
     return p.parse_args(argv)
 
 
-def _select_keys(args, adapters, detected) -> list[str]:
-    if args.agents:
-        return [k.strip() for k in args.agents.split(",") if k.strip()]
-    # The picker reads keystrokes from stdin; only launch it when stdin is a
-    # real terminal. Under `curl | sh` stdin is the pipe (not a tty) unless the
-    # bootstrap reattaches /dev/tty.
-    if args.yes or not sys.stdin.isatty():
-        return sorted(detected)
-    from .tui import select_agents
-
-    return select_agents(adapters, detected)
+def _resolve_keys(raw: str, adapters: list[Adapter]) -> tuple[list[str], list[str]]:
+    """Split a comma list into (valid_keys, unknown_keys)."""
+    valid = {a.key for a in adapters}
+    keys = [k.strip() for k in raw.split(",") if k.strip()]
+    unknown = [k for k in keys if k not in valid]
+    return keys, unknown
 
 
 def _print_summary(results: list[ApplyResult]) -> None:
+    if not results:
+        print("No changes.")
+        return
     print("\nSummary:")
     for r in results:
         if r.action == "dry-run":
-            line = f"  ~ {r.key}: would write {r.path or r.note}"
+            print(f"  ~ {r.key}: {r.note or 'would change'}  ({r.path or 'via CLI'})")
+        elif r.action == "absent":
+            print(f"  - {r.key}: not installed, nothing to remove")
         elif r.ok:
             where = r.path or "(via CLI)"
             line = f"  ✓ {r.key}: {r.action} → {where}"
             if r.backup:
                 line += f"  (backup {r.backup})"
+            print(line)
+            if r.note:
+                print(f"      next: {r.note}")
         else:
-            line = f"  ✗ {r.key}: {r.error}"
-        print(line)
-        if r.ok and r.note and r.action != "dry-run":
-            print(f"      next: {r.note}")
+            print(f"  ✗ {r.key}: {r.error}")
+
+
+def _reconcile(adapters, selected: set[str], installed: set[str], spec, *, dry_run: bool) -> list[ApplyResult]:
+    results: list[ApplyResult] = []
+    for a in adapters:
+        want = a.key in selected
+        have = a.key in installed
+        if want and not have:
+            results.append(a.apply(spec, dry_run=dry_run))
+        elif have and not want:
+            results.append(a.remove(dry_run=dry_run))
+    return results
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -57,35 +69,52 @@ def main(argv: list[str] | None = None) -> int:
 
     adapters = build_registry()
     detected = {a.key for a in adapters if a.detect()}
+    installed = {a.key for a in adapters if a.is_installed()}
 
     if args.list:
         print("Supported agents:")
         for a in adapters:
-            mark = "detected" if a.key in detected else "not found"
-            print(f"  [{mark:>9}] {a.label:<16} {a.key}")
-        return 0
-
-    keys = _select_keys(args, adapters, detected)
-
-    # Validate keys.
-    valid = {a.key for a in adapters}
-    unknown = [k for k in keys if k not in valid]
-    if unknown:
-        print(f"error: unknown agent(s): {', '.join(unknown)}", file=sys.stderr)
-        print(f"valid keys: {', '.join(sorted(valid))}", file=sys.stderr)
-        return 2
-
-    if not keys:
-        print("No agents selected. Nothing to do.")
+            if a.key in installed:
+                status = "installed"
+            elif a.key in detected:
+                status = "detected"
+            else:
+                status = "not found"
+            print(f"  [{status:>9}] {a.label:<16} {a.key}")
         return 0
 
     spec = default_spec()
-    results: list[ApplyResult] = []
-    for key in keys:
-        adapter = adapter_by_key(key)
-        assert adapter is not None  # validated above
-        results.append(adapter.apply(spec, dry_run=args.dry_run))
 
+    # Non-interactive uninstall.
+    if args.uninstall:
+        keys, unknown = _resolve_keys(args.uninstall, adapters)
+        if unknown:
+            print(f"error: unknown agent(s): {', '.join(unknown)}", file=sys.stderr)
+            return 2
+        results = [adapter_by_key(k).remove(dry_run=args.dry_run) for k in keys]
+        _print_summary(results)
+        return 1 if any(not r.ok for r in results) else 0
+
+    # Non-interactive install.
+    if args.agents:
+        keys, unknown = _resolve_keys(args.agents, adapters)
+        if unknown:
+            print(f"error: unknown agent(s): {', '.join(unknown)}", file=sys.stderr)
+            return 2
+        results = [adapter_by_key(k).apply(spec, dry_run=args.dry_run) for k in keys]
+        _print_summary(results)
+        return 1 if any(not r.ok for r in results) else 0
+
+    # Interactive: pick the desired set, then reconcile against what's installed.
+    if not sys.stdin.isatty():
+        print("No terminal available. Use --agents KEYS to install or --uninstall KEYS to remove.")
+        print("Run with --list to see agent keys and status.")
+        return 0
+
+    from .tui import select_agents
+
+    selected = set(select_agents(adapters, detected, installed))
+    results = _reconcile(adapters, selected, installed, spec, dry_run=args.dry_run)
     _print_summary(results)
     return 1 if any(not r.ok for r in results) else 0
 

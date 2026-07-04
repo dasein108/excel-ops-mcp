@@ -6,8 +6,8 @@ from pathlib import Path
 from typing import Callable
 
 from ..errors import MalformedConfig
-from ..merge import backup_file, json_upsert_server
-from ..spec import ServerSpec
+from ..merge import backup_file, json_has_server, json_remove_server, json_upsert_server
+from ..spec import SERVER_NAME, ServerSpec
 from .base import Adapter, ApplyResult
 
 
@@ -41,9 +41,30 @@ class JsonFileAdapter(Adapter):
             return True
         return False
 
+    def is_installed(self) -> bool:
+        path = self.desc.path_fn()
+        return path is not None and json_has_server(path, self.desc.root_key, SERVER_NAME)
+
     def target(self) -> str | None:
         path = self.desc.path_fn()
         return str(path) if path else None
+
+    def remove(self, *, dry_run: bool) -> ApplyResult:
+        path = self.desc.path_fn()
+        if path is None:
+            return ApplyResult(self.key, False, "skipped", None, None,
+                               error="no config path on this platform")
+        if dry_run:
+            return ApplyResult(self.key, True, "dry-run", str(path), None,
+                               note="would remove excel-ops-mcp")
+        try:
+            backup = backup_file(path)
+            action = json_remove_server(path, self.desc.root_key, SERVER_NAME)
+        except MalformedConfig as exc:
+            return ApplyResult(self.key, False, "skipped", str(path), None, error=str(exc))
+        return ApplyResult(self.key, True, action, str(path),
+                           str(backup) if backup else None,
+                           note=self.desc.restart_note if action == "removed" else None)
 
     def apply(self, spec: ServerSpec, *, dry_run: bool) -> ApplyResult:
         path = self.desc.path_fn()

@@ -57,3 +57,42 @@ def test_detect_false_when_nothing_present(tmp_path):
                           path_fn=lambda: tmp_path / ".cursor" / "mcp.json",
                           detect_dirs=(tmp_path / ".cursor",))
     assert JsonFileAdapter(desc).detect() is False
+
+
+def test_is_installed_reflects_config(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    desc = JsonDescriptor(key="cursor", label="Cursor", gui=True, path_fn=lambda: cfg)
+    adapter = JsonFileAdapter(desc)
+    assert adapter.is_installed() is False
+    adapter.apply(_spec(), dry_run=False)
+    assert adapter.is_installed() is True
+
+
+def test_remove_deletes_entry_and_backs_up(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    desc = JsonDescriptor(key="cursor", label="Cursor", gui=True, path_fn=lambda: cfg)
+    adapter = JsonFileAdapter(desc)
+    adapter.apply(_spec(), dry_run=False)
+    result = adapter.remove(dry_run=False)
+    assert result.ok and result.action == "removed"
+    assert result.backup is not None
+    assert adapter.is_installed() is False
+
+
+def test_remove_absent_when_not_installed(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    cfg.write_text(json.dumps({"mcpServers": {}}))
+    desc = JsonDescriptor(key="cursor", label="Cursor", gui=True, path_fn=lambda: cfg)
+    result = JsonFileAdapter(desc).remove(dry_run=False)
+    assert result.action == "absent"
+
+
+def test_remove_dry_run_writes_nothing(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    desc = JsonDescriptor(key="cursor", label="Cursor", gui=True, path_fn=lambda: cfg)
+    adapter = JsonFileAdapter(desc)
+    adapter.apply(_spec(), dry_run=False)
+    before = cfg.read_text()
+    result = adapter.remove(dry_run=True)
+    assert result.action == "dry-run"
+    assert cfg.read_text() == before

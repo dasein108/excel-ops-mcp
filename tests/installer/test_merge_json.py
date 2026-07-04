@@ -3,7 +3,12 @@ import json
 import pytest
 
 from excel_mcp.installer.errors import MalformedConfig
-from excel_mcp.installer.merge import backup_file, json_upsert_server
+from excel_mcp.installer.merge import (
+    backup_file,
+    json_has_server,
+    json_remove_server,
+    json_upsert_server,
+)
 
 
 def test_creates_file_when_absent(tmp_path):
@@ -53,3 +58,35 @@ def test_backup_copies_existing(tmp_path):
 
 def test_backup_none_when_absent(tmp_path):
     assert backup_file(tmp_path / "nope.json") is None
+
+
+def test_has_server_true_false(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    assert json_has_server(cfg, "mcpServers", "excel-ops-mcp") is False  # absent file
+    json_upsert_server(cfg, "mcpServers", "excel-ops-mcp", {"command": "uvx", "args": []})
+    assert json_has_server(cfg, "mcpServers", "excel-ops-mcp") is True
+
+
+def test_has_server_malformed_is_absent(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    cfg.write_text("{broken")
+    assert json_has_server(cfg, "mcpServers", "excel-ops-mcp") is False
+
+
+def test_remove_server_deletes_only_target(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    cfg.write_text(json.dumps({"mcpServers": {"excel-ops-mcp": {"command": "uvx"}, "other": {"command": "x"}}}))
+    assert json_remove_server(cfg, "mcpServers", "excel-ops-mcp") == "removed"
+    data = json.loads(cfg.read_text())
+    assert "excel-ops-mcp" not in data["mcpServers"]
+    assert data["mcpServers"]["other"] == {"command": "x"}
+
+
+def test_remove_server_absent_when_missing(tmp_path):
+    cfg = tmp_path / "mcp.json"
+    cfg.write_text(json.dumps({"mcpServers": {"other": {}}}))
+    assert json_remove_server(cfg, "mcpServers", "excel-ops-mcp") == "absent"
+
+
+def test_remove_server_absent_when_no_file(tmp_path):
+    assert json_remove_server(tmp_path / "nope.json", "mcpServers", "excel-ops-mcp") == "absent"
