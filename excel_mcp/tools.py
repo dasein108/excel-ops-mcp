@@ -278,6 +278,26 @@ class ExcelMcpTools:
             self._audit("list", response, {}, None, started)
             return response
 
+    def resolve_source(self, payload: dict[str, Any]) -> tuple[str, bool]:
+        """Turn a path-or-session payload into (session_id, cache_hit).
+
+        Precedence: an explicit session_id wins; else uploaded bytes; else a
+        host path. Missing all three is a PolicyError. This is the single entry
+        point every fat tool uses so no tool needs a separate open call.
+        """
+        session_id = payload.get("session_id")
+        if session_id:
+            self.sessions.get(session_id)  # raises KeyError if unknown/stale
+            return session_id, True
+        if payload.get("content_base64") is not None:
+            path = self._materialize_upload(payload["content_base64"], payload.get("filename"))
+        elif payload.get("path"):
+            path = self.path_policy.validate_input_file(payload["path"])
+        else:
+            raise PolicyError("missing_source", "Provide 'session_id', 'path', or 'content_base64'.")
+        session, cache_hit = self.sessions.open(path)
+        return session.session_id, cache_hit
+
     def _materialize_upload(self, content_base64: str, filename: str | None) -> Path:
         """Write uploaded bytes to the cache dir so path-only opens work for
         clients that don't share the server host filesystem."""
