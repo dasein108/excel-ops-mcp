@@ -48,7 +48,7 @@ def main() -> None:
 
     @app.tool()
     def spreadsheet_open(path: str | None = None, content_base64: str | None = None, filename: str | None = None) -> dict:
-        """Open an .xlsx workbook and return a session_id used by the other tools.
+        """[DEPRECATED — use spreadsheet_inspect/edit/list] Open an .xlsx workbook and return a session_id used by the other tools.
 
         Paths resolve against the SERVER HOST filesystem, relative to the
         server's allowed roots (see workbook_list for those roots). Absolute
@@ -82,7 +82,7 @@ def main() -> None:
 
     @app.tool()
     def workbook_list(glob: str | None = None, limit: int = 200) -> dict:
-        """List .xlsx workbooks under the server's allowed roots.
+        """[DEPRECATED — use spreadsheet_inspect/edit/list] List .xlsx workbooks under the server's allowed roots.
 
         Call this first when you don't know where files live: it returns the
         allowed 'root_paths' and matching 'workbooks' (path/size/modified), so
@@ -93,23 +93,34 @@ def main() -> None:
 
     @app.tool()
     def spreadsheet_describe(session_id: str, detail: str = "compact") -> dict:
+        """[DEPRECATED — use spreadsheet_inspect/edit/list]"""
         return tools.spreadsheet_describe({"session_id": session_id, "detail": detail})
 
     @app.tool()
-    def spreadsheet_query(session_id: str, sql: str, limit: int | None = None) -> dict:
-        return tools.spreadsheet_query({"session_id": session_id, "sql": sql, "limit": limit})
+    def spreadsheet_query(sql: str, path: str | None = None, session_id: str | None = None,
+                          limit: int | None = None, content_base64: str | None = None, filename: str | None = None) -> dict:
+        """Run a read-only SQL query over a workbook. Pass 'path' (auto-opens) OR 'session_id'."""
+        return tools.spreadsheet_query({"path": path, "session_id": session_id, "sql": sql, "limit": limit,
+            "content_base64": content_base64, "filename": filename})
+
+    @app.tool()
+    def spreadsheet_list(glob: str | None = None, limit: int = 200) -> dict:
+        """List .xlsx workbooks under the server's allowed roots."""
+        return tools.spreadsheet_list({"glob": glob, "limit": limit})
 
     @app.tool()
     def spreadsheet_read_range(session_id: str, sheet: str, range: str, include: list[str] | None = None) -> dict:
+        """[DEPRECATED — use spreadsheet_inspect/edit/list]"""
         return tools.spreadsheet_read_range({"session_id": session_id, "sheet": sheet, "range": range, "include": include or ["values"]})
 
     @app.tool()
     def spreadsheet_trace(session_id: str, sheet: str, cell: str, depth: int = 1) -> dict:
+        """[DEPRECATED — use spreadsheet_inspect/edit/list]"""
         return tools.spreadsheet_trace({"session_id": session_id, "sheet": sheet, "cell": cell, "depth": depth})
 
     @app.tool()
     def spreadsheet_write(session_id: str, operations: list[dict], dry_run: bool = True) -> dict:
-        """Stage cell edits (dry_run=True previews; commit them with spreadsheet_commit).
+        """[DEPRECATED — use spreadsheet_inspect/edit/list] Stage cell edits (dry_run=True previews; commit them with spreadsheet_commit).
 
         Each operation is {"type", "sheet", ...}. Supported types and their fields:
           - set_values:  {"type":"set_values","sheet":"Sheet1","start":"A1","values":[[1,2],[3,4]]}
@@ -126,10 +137,12 @@ def main() -> None:
 
     @app.tool()
     def spreadsheet_commit(session_id: str, staged_id: str, output_path: str | None = None, overwrite: bool = False) -> dict:
+        """[DEPRECATED — use spreadsheet_inspect/edit/list]"""
         return tools.spreadsheet_commit({"session_id": session_id, "staged_id": staged_id, "output_path": output_path, "overwrite": overwrite})
 
     @app.tool()
     def spreadsheet_diff(session_id: str, staged_id: str | None = None) -> dict:
+        """[DEPRECATED — use spreadsheet_inspect/edit/list]"""
         return tools.spreadsheet_diff({"session_id": session_id, "staged_id": staged_id})
 
     @app.tool()

@@ -137,6 +137,9 @@ class ExcelMcpTools:
         started = time.perf_counter()
         session = None
         try:
+            if not (payload.get("session_id") if isinstance(payload, dict) else getattr(payload, "session_id", None)):
+                session_id, _ = self.resolve_source(payload if isinstance(payload, dict) else {})
+                payload = {**(payload if isinstance(payload, dict) else {}), "session_id": session_id}
             request = payload if isinstance(payload, SpreadsheetQueryRequest) else SpreadsheetQueryRequest.model_validate(payload)
             session = self.sessions.get(request.session_id)
             limit = min(request.limit or self.config.query_row_limit, self.config.query_row_limit)
@@ -315,6 +318,9 @@ class ExcelMcpTools:
         return self.spreadsheet_commit({
             "session_id": session_id, "staged_id": staged["staged_id"],
             "output_path": payload.get("output_path"), "overwrite": bool(payload.get("overwrite", False))})
+
+    def spreadsheet_list(self, payload: dict[str, Any] | None = None) -> dict[str, Any]:
+        return self.workbook_list(payload or {})
 
     def workbook_list(self, payload: dict[str, Any] | WorkbookListRequest | None = None) -> dict[str, Any]:
         started = time.perf_counter()
