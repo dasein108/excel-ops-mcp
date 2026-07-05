@@ -16,12 +16,18 @@ if ! command -v uvx >/dev/null 2>&1; then
   exit 1
 fi
 
+# uvx caches resolved versions, so a plain re-run keeps using the old release.
+# Clear the cached excel-ops-mcp so this run — and the server that agents launch
+# via `uvx excel-ops-mcp` — picks up the latest published version.
+echo "excel-ops-mcp: updating to the latest published version..."
+uv cache clean excel-ops-mcp >/dev/null 2>&1 || true
+
 echo "excel-ops-mcp: launching installer..."
 # Only reattach the terminal when stdin is NOT already interactive — i.e. the
 # `curl ... | sh` case, where stdin is the pipe. When run directly, stdin is
 # already the terminal; reopening /dev/tty there breaks the picker on macOS.
 if [ -t 0 ] || [ ! -e /dev/tty ]; then
-  exec uvx --from "excel-ops-mcp[install]" excel-ops-mcp-install "$@"
+  exec uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" excel-ops-mcp-install "$@"
 else
-  exec uvx --from "excel-ops-mcp[install]" excel-ops-mcp-install "$@" </dev/tty
+  exec uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" excel-ops-mcp-install "$@" </dev/tty
 fi

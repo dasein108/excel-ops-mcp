@@ -55,6 +55,10 @@ Non-interactive: `... | sh -s -- --agents cursor,claude-code` to install, or
 `--uninstall cursor,claude-code` to remove. Preview with `--dry-run`; see status
 with `--list`.
 
+**Updating:** re-run the same command anytime — the bootstrap refreshes the uvx
+cache so both the installer and the server your agents launch move to the latest
+published version.
+
 ### Install `uv`
 
 macOS/Linux:
