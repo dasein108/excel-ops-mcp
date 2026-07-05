@@ -300,6 +300,22 @@ class ExcelMcpTools:
             self._audit("diff", response, {}, str(session.path) if session else None, started)
             return response
 
+    def spreadsheet_edit(self, payload: dict[str, Any]) -> dict[str, Any]:
+        try:
+            session_id, _ = self.resolve_source(payload)
+        except KeyError:
+            return error_response("session_not_found", "Session does not exist or workbook changed.")
+        except PolicyError as exc:
+            return error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
+        dry_run = bool(payload.get("dry_run", False))
+        staged = self.spreadsheet_write({
+            "session_id": session_id, "operations": payload.get("operations", []), "dry_run": True})
+        if not staged.get("ok") or staged.get("rejected_operations") or dry_run or not payload.get("commit", True):
+            return staged
+        return self.spreadsheet_commit({
+            "session_id": session_id, "staged_id": staged["staged_id"],
+            "output_path": payload.get("output_path"), "overwrite": bool(payload.get("overwrite", False))})
+
     def workbook_list(self, payload: dict[str, Any] | WorkbookListRequest | None = None) -> dict[str, Any]:
         started = time.perf_counter()
         try:

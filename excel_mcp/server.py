@@ -132,6 +132,23 @@ def main() -> None:
     def spreadsheet_diff(session_id: str, staged_id: str | None = None) -> dict:
         return tools.spreadsheet_diff({"session_id": session_id, "staged_id": staged_id})
 
+    @app.tool()
+    def spreadsheet_edit(operations: list[dict], path: str | None = None, session_id: str | None = None,
+                         content_base64: str | None = None, filename: str | None = None,
+                         dry_run: bool = False, commit: bool = True,
+                         output_path: str | None = None, overwrite: bool = False) -> dict:
+        """Apply cell edits in one call. Pass 'path' (auto-opens) OR 'session_id'.
+
+        dry_run=true previews (stages, returns diff, writes nothing).
+        dry_run=false + commit=true stages AND commits in a single call, returning
+        'output_path' and 'changes'. Rejected operations abort the commit.
+        Operation shapes are the same as the old spreadsheet_write (set_values,
+        set_formula, clear_range, append_rows, insert_rows, delete_rows, copy_range).
+        """
+        return tools.spreadsheet_edit({"operations": operations, "path": path, "session_id": session_id,
+            "content_base64": content_base64, "filename": filename, "dry_run": dry_run, "commit": commit,
+            "output_path": output_path, "overwrite": overwrite})
+
     app.run()
 
 
