@@ -163,3 +163,17 @@ uvx --from excel-mcp excel-ops sheets workbook.xlsx
 ```
 
 GitHub releases should publish to PyPI through trusted publishing, not checked-in API tokens.
+
+## Later Additions (Tasks 24–29)
+
+Added after the original 00–23 plan. Kept in this same backlog so there is one list.
+
+- Task 24: computed value resolution (cached + recompute fallback). [done]
+- Task 25: eval harness — subagent answerer + judge. [draft]
+- Task 26: SaaS model eval suite (20 questions + gold + deterministic checks). [draft]
+- Task 27: agent-understandability rules — matrix orientation + formula-lineage trace. [done]
+- Task 28: tag-driven PyPI release. [partial] — folded in from a superpowers design spec.
+- Task 29: cross-agent installer. [draft] — folded in from a superpowers design spec.
+
+Design specs that used to live under `docs/superpowers/specs/` are now folded into this
+`tasks/` backlog (Tasks 28–29) so there is a single source of truth.

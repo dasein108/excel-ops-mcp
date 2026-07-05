@@ -1,16 +1,18 @@
-# excel-ops-mcp cross-agent installer — design
+---
+title: "Cross-agent Installer"
+status: draft
+scope: distribution
+source: "superpowers spec 2026-07-04 (approved)"
+---
 
-Date: 2026-07-04
-Status: approved
+# Cross-agent Installer
 
-## Goal
-
-Give users a single command that installs `excel-ops-mcp` and wires it into
-whichever LLM agents/apps they choose. Bootstraps `uv`/`uvx` from scratch, then
-runs a TUI to pick agents and writes each agent's MCP config safely.
+Give users a single command that installs `excel-ops-mcp` and wires it into whichever
+LLM agents/apps they choose. Bootstraps `uv`/`uvx` from scratch, then runs a TUI to
+pick agents and writes each agent's MCP config safely.
 
 Target agents (v1): Claude Desktop, Claude Code, Codex, Gemini CLI, Cursor,
-Windsurf. Target OSes (v1): macOS, Linux, Windows.
+Windsurf. Target OSes (v1): macOS, Linux, Windows. Ships as **v0.2.0**.
 
 ## Delivery / bootstrap
 
@@ -30,9 +32,9 @@ Windsurf. Target OSes (v1): macOS, Linux, Windows.
 - Installer ships **inside** the `excel-ops-mcp` package — no second package.
 - New module `excel_mcp/installer/`.
 - New console script: `excel-ops-mcp-install = "excel_mcp.installer.cli:main"`.
-- `questionary` added under a new optional extra `[project.optional-dependencies]
-  install = ["questionary>=2.0"]`. Base package stays lean; bootstrap always pulls
-  the extra via `excel-ops-mcp[install]`.
+- `questionary` added under a new optional extra `install = ["questionary>=2.0"]`.
+  Base package stays lean; bootstrap always pulls the extra via
+  `excel-ops-mcp[install]`.
 
 ## Module layout
 
@@ -97,7 +99,7 @@ args = ["excel-ops-mcp"]
 ## TUI behavior
 
 - `questionary` checkbox list of all six agents.
-- Detected agents are pre-checked; missing ones labeled `(not found)` but still
+- Detected agents pre-checked; missing ones labeled `(not found)` but still
   selectable (user may install the app later).
 - Space toggles, enter confirms.
 - Fallbacks: if stdout is not a TTY, or `--yes`/`--agents` given, skip the TUI.
@@ -111,28 +113,22 @@ args = ["excel-ops-mcp"]
 
 ## Safety (non-negotiable)
 
-- **Never clobber**: read existing config, insert/update only the
-  `excel-ops-mcp` entry, preserve all other servers and unrelated keys.
+- **Never clobber**: read existing config, insert/update only the `excel-ops-mcp`
+  entry, preserve all other servers and unrelated keys.
 - **Backup**: copy each target to `<name>.bak` before writing.
 - **Idempotent**: re-running updates the entry in place, no duplicates.
 - Create parent dirs / fresh config only for agents actually selected.
 - Malformed existing config → do not overwrite; report and skip that agent.
-- Final summary: per-agent written path, backup path, created/updated,
-  restart notes.
+- Final summary: per-agent written path, backup path, created/updated, restart notes.
 
 ## Testing
 
-- Per-adapter unit tests over tmp files:
-  - merge preserves existing servers + unrelated keys
-  - creates valid config when absent
-  - idempotent on re-run
-  - correct command/args shape (JSON and TOML)
-  - malformed input is not clobbered
+- Per-adapter unit tests over tmp files: merge preserves existing servers + unrelated
+  keys; creates valid config when absent; idempotent on re-run; correct command/args
+  shape (JSON and TOML); malformed input not clobbered.
 - Detection tests with faked PATH / file locations.
-- CLI tests: `--dry-run` writes nothing; `--agents` selects correctly;
-  `--list` output.
-- TUI kept thin; business logic lives in adapters (which are tested). No TUI
-  automation in v1.
+- CLI tests: `--dry-run` writes nothing; `--agents` selects correctly; `--list` output.
+- TUI kept thin; business logic lives in adapters (tested). No TUI automation in v1.
 
 ## Out of scope (v1, YAGNI)
 
@@ -140,7 +136,3 @@ args = ["excel-ops-mcp"]
 - Per-project (vs global) config choice.
 - Agents beyond the six listed.
 - Full-screen TUI.
-
-## Release
-
-Ships as **v0.2.0**, after v0.1.1 (command rename) is published.

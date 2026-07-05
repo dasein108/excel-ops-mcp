@@ -517,6 +517,30 @@ If Architecture C (hybrid in-house) is adopted (see [EXCEL_MCP_REVIEW.md §6](./
 - [SUMMARY.md](./SUMMARY.md) — fleet-wide effectiveness investigation.
 - [PROBLEM_CATEGORIES.md](./PROBLEM_CATEGORIES.md) — A-G category index.
 
+## Addendum — Cloud / Microsoft 365 (Graph API)
+
+*Added 2026-07. The original survey scoped out cloud-only servers (see xing5/mcp-google-sheets); this addendum covers the Microsoft 365 path since it's the main "why not just use the cloud?" alternative to a local `.xlsx` engine.*
+
+**Clarification:** Microsoft's **official** MCP (Microsoft MCP Server for Enterprise, public preview) is **identity/Entra-focused** — users, groups, apps, devices, admin reporting — **not Excel**. "Excel via Microsoft 365" means **third-party MCP servers over the Graph API workbook endpoints** — e.g. [Softeria `ms-365-mcp-server`](https://github.com/softeria/ms-365-mcp-server) (200+ tools, `excel` preset), [Arcade.dev Office servers](https://www.arcade.dev/blog/microsoft-office-365-mcp-servers-launch/), [MCP-Microsoft-Office](https://github.com/Aanerud/MCP-Microsoft-Office). These operate on cloud-hosted workbooks in OneDrive/SharePoint, OAuth per tenant user, with Excel's real calc engine running server-side.
+
+It is a different **deployment model**, not a different implementation of the same idea:
+
+| Axis | Microsoft 365 / Graph | excel-ops (this repo) |
+|---|---|---|
+| **Where files live** | Cloud — OneDrive / SharePoint | Local disk (`.xlsx`), sandboxed to allowed roots |
+| **Auth / setup** | OAuth2 + Azure app registration + tenant permissions | None; runs offline, no account |
+| **Calc engine** | ✅ Excel's real engine server-side — live recompute, all functions, what-if edits recalc | Reads **cached** values; optional `formulas` recompute fallback; edits don't recalc |
+| **Query model** | REST cell/range/table endpoints; no SQL | **DuckDB SQL** over auto-detected regions |
+| **Structure awareness** | Excel Tables (ListObjects) only | Multi-table detection, matrix orientation, `year_1_total`, `trace` lineage |
+| **Writes** | Live into the real workbook; charts/pivots preserved, Excel recalcs | Staged → diff → **commit to a new file**; openpyxl (charts limited, no recalc) |
+| **Determinism** | Depends on live cloud state | Byte-stable (eval: 20/20 reproducible) |
+| **Breadth** | Whole suite (mail, calendar, Teams, files) | Excel-only, but deep |
+| **Cost / offline** | Needs 365 subscription + online | Free, fully offline, private |
+
+**Pick Microsoft 365 / Graph** when files already live in OneDrive/SharePoint, you need Excel's **live calc engine** and full write fidelity (charts/pivots/recalc), the org is on 365, or the agent also needs mail/calendar/Teams. **Pick excel-ops** for local `.xlsx`, offline/privacy, token-efficient analytical Q&A over messy multi-table sheets, deterministic evals, and safe staged edits with no cloud/auth.
+
+**The one axis where 365 is strictly ahead:** a **live calc engine** — what-if edits that recompute. This repo only reads cached values or best-effort recomputes (the same limitation the SaaS eval flagged on the churn what-if). Complementary, not rivals.
+
 
 ---
 
