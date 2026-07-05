@@ -10,7 +10,13 @@ from excel_mcp.utils import cell_value_for_json, source_ref
 from excel_mcp.values import get_value_resolver
 
 
-def read_range(session: WorkbookSession, request: SpreadsheetReadRangeRequest, config: ExcelMcpConfig) -> SpreadsheetReadRangeResponse:
+def read_range(
+    session: WorkbookSession,
+    request: SpreadsheetReadRangeRequest,
+    config: ExcelMcpConfig,
+    *,
+    full: bool = False,
+) -> SpreadsheetReadRangeResponse:
     if request.sheet not in session.workbook.sheetnames:
         raise PolicyError("sheet_not_found", "Sheet does not exist.")
     min_col, min_row, max_col, max_row = range_boundaries(request.range)
@@ -66,6 +72,14 @@ def read_range(session: WorkbookSession, request: SpreadsheetReadRangeRequest, c
                 "Prefer 'query' or 'describe' over repeated small range reads."
             )
 
-    return SpreadsheetReadRangeResponse(
+    truncated = not full and len(rows) > config.read_row_limit
+    if truncated:
+        rows = rows[: config.read_row_limit]
+
+    response = SpreadsheetReadRangeResponse(
         ok=True, session_id=session.session_id, source_refs=[ref], cells=rows, warnings=warnings
     )
+    if truncated:
+        response.telemetry.truncated = True
+        response.telemetry.rows_returned = config.read_row_limit
+    return response

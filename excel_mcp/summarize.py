@@ -31,6 +31,7 @@ def summarize_range(
         session,
         SpreadsheetReadRangeRequest(session_id=session.session_id, sheet=sheet, range=cell_range, include=["values"]),
         config,
+        full=True,
     )
     values: list[float] = []
     skipped = 0

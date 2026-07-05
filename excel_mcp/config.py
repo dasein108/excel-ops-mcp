@@ -12,6 +12,7 @@ class ExcelMcpConfig(BaseModel):
     max_open_workbooks: int = 8
     session_ttl_seconds: int = 60 * 60
     query_row_limit: int = 1000
+    read_row_limit: int = 200
     max_response_chars: int = 50_000
     max_read_range_cells: int = 10_000
     repeat_read_small_cells: int = 64
