@@ -103,6 +103,7 @@ class SpreadsheetDescribeResponse(BaseResponse):
     file_name: str | None = None
     sheet_count: int = 0
     sheets: list[SheetInfo] = Field(default_factory=list)
+    best_source: list[dict[str, Any]] = Field(default_factory=list)
 
 
 class SpreadsheetQueryRequest(BaseModel):

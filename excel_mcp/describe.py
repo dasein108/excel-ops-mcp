@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from openpyxl.workbook.defined_name import DefinedNameDict
 
+from excel_mcp.best_source import rank_sources
 from excel_mcp.regions import detect_regions
 from excel_mcp.schemas import SheetInfo, SpreadsheetDescribeResponse
 from excel_mcp.session import WorkbookSession
@@ -41,7 +42,7 @@ def describe_workbook(session: WorkbookSession, detail: str = "compact") -> Spre
         )
 
     session.regions = all_regions
-    return SpreadsheetDescribeResponse(
+    response = SpreadsheetDescribeResponse(
         ok=True,
         session_id=session.session_id,
         source_refs=[sheet.source_ref for sheet in sheets],
@@ -49,6 +50,8 @@ def describe_workbook(session: WorkbookSession, detail: str = "compact") -> Spre
         sheet_count=len(sheets),
         sheets=sheets,
     )
+    response.best_source = rank_sources(response.sheets)[:3]
+    return response
 
 
 def _compact_region(region):
