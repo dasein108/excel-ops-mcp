@@ -23,11 +23,15 @@ echo "excel-ops-mcp: updating to the latest published version..."
 uv cache clean excel-ops-mcp >/dev/null 2>&1 || true
 
 echo "excel-ops-mcp: launching installer..."
-# Only reattach the terminal when stdin is NOT already interactive — i.e. the
-# `curl ... | sh` case, where stdin is the pipe. When run directly, stdin is
-# already the terminal; reopening /dev/tty there breaks the picker on macOS.
-if [ -t 0 ] || [ ! -e /dev/tty ]; then
+# Interactive picker needs a terminal on stdin. When stdin is already a terminal
+# (direct run), use it as-is — reopening /dev/tty there breaks the picker on
+# macOS. When stdin is a pipe (`curl ... | sh`), reattach /dev/tty, but only if
+# it is actually openable — in CI/sandbox/cron it can exist yet fail to open, so
+# fall back to a non-interactive run there.
+if [ -t 0 ]; then
   exec uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" excel-ops-mcp-install "$@"
-else
+elif ( : < /dev/tty ) 2>/dev/null; then
   exec uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" excel-ops-mcp-install "$@" </dev/tty
+else
+  exec uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" excel-ops-mcp-install "$@"
 fi
