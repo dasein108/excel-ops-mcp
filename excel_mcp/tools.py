@@ -30,6 +30,7 @@ from excel_mcp.schemas import (
     error_response,
 )
 from excel_mcp.session import SessionRegistry
+from excel_mcp.summarize import summarize_range
 from excel_mcp.trace import trace_cell
 from excel_mcp.writes import commit_staged, diff_staged, stage_write
 
@@ -92,6 +93,37 @@ class ExcelMcpTools:
             response = error_response("describe_failed", str(exc))
             self._audit("describe", response, {}, str(session.path) if session else None, started)
             return response
+
+    def spreadsheet_inspect(self, payload: dict[str, Any]) -> dict[str, Any]:
+        started = time.perf_counter()
+        mode = payload.get("mode", "describe")
+        try:
+            session_id, _ = self.resolve_source(payload)
+        except KeyError:
+            return error_response("session_not_found", "Session does not exist or workbook changed.")
+        except PolicyError as exc:
+            return error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
+        if mode == "describe":
+            return self.spreadsheet_describe({"session_id": session_id, "detail": payload.get("detail", "compact")})
+        if mode == "read":
+            return self.spreadsheet_read_range({
+                "session_id": session_id, "sheet": payload.get("sheet"),
+                "range": payload.get("range"), "include": payload.get("include") or ["values"]})
+        if mode == "trace":
+            return self.spreadsheet_trace({
+                "session_id": session_id, "sheet": payload.get("sheet"),
+                "cell": payload.get("cell"), "depth": payload.get("depth", 1)})
+        if mode == "summary":
+            try:
+                session = self.sessions.get(session_id)
+                resp = summarize_range(session, payload.get("sheet"), payload.get("range"), self.config,
+                                       growth=bool(payload.get("growth"))).model_dump()
+                resp["telemetry"]["elapsed_ms"] = _elapsed_ms(started)
+                self._audit("summary", resp, {"sheet": payload.get("sheet"), "range": payload.get("range")}, str(session.path), started)
+                return resp
+            except Exception as exc:
+                return error_response("summary_failed", str(exc))
+        return error_response("invalid_mode", f"Unknown mode '{mode}'. Use describe|read|trace|summary.")
 
     def spreadsheet_query(self, payload: dict[str, Any] | SpreadsheetQueryRequest) -> dict[str, Any]:
         started = time.perf_counter()

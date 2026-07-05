@@ -63,6 +63,24 @@ def main() -> None:
         return tools.spreadsheet_open({"path": path, "content_base64": content_base64, "filename": filename})
 
     @app.tool()
+    def spreadsheet_inspect(mode: str = "describe", path: str | None = None, session_id: str | None = None,
+                            content_base64: str | None = None, filename: str | None = None,
+                            sheet: str | None = None, range: str | None = None, cell: str | None = None,
+                            depth: int = 1, include: list[str] | None = None, detail: str = "compact",
+                            growth: bool = False) -> dict:
+        """Inspect a workbook. Pass a 'path' (auto-opens) OR a 'session_id' from a prior call.
+
+        mode='describe' -> sheets + a 'best_source' hint ranking the cleanest sheet first.
+        mode='summary'  -> server computes total/mean/min/max (+ yoy_growth_pct when growth=true)
+                           over sheet+range, so you never sum cells yourself.
+        mode='read'     -> raw cells for sheet+range (include=['values','formulas',...]).
+        mode='trace'    -> formula precedents for sheet+cell to 'depth' levels.
+        """
+        return tools.spreadsheet_inspect({"mode": mode, "path": path, "session_id": session_id,
+            "content_base64": content_base64, "filename": filename, "sheet": sheet, "range": range,
+            "cell": cell, "depth": depth, "include": include, "detail": detail, "growth": growth})
+
+    @app.tool()
     def workbook_list(glob: str | None = None, limit: int = 200) -> dict:
         """List .xlsx workbooks under the server's allowed roots.
 
