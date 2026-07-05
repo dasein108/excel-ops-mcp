@@ -179,5 +179,24 @@ class SpreadsheetDiffResponse(BaseResponse):
     changes: list[dict[str, Any]] = Field(default_factory=list)
 
 
+class SpreadsheetSummaryRequest(BaseModel):
+    session_id: str
+    sheet: str
+    range: str
+    growth: bool = False
+
+
+class SpreadsheetSummaryResponse(BaseResponse):
+    sheet: str | None = None
+    range: str | None = None
+    count: int = 0
+    skipped: int = 0
+    total: float | None = None
+    mean: float | None = None
+    min: float | None = None
+    max: float | None = None
+    yoy_growth_pct: list[float] = Field(default_factory=list)
+
+
 def error_response(code: str, message: str, details: dict[str, Any] | None = None) -> dict[str, Any]:
     return BaseResponse(ok=False, error=ErrorInfo(code=code, message=message, details=details or {})).model_dump()
