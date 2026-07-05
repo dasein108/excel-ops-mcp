@@ -47,8 +47,31 @@ def main() -> None:
     tools = ExcelMcpTools(resolve_config())
 
     @app.tool()
-    def spreadsheet_open(path: str) -> dict:
-        return tools.spreadsheet_open({"path": path})
+    def spreadsheet_open(path: str | None = None, content_base64: str | None = None, filename: str | None = None) -> dict:
+        """Open an .xlsx workbook and return a session_id used by the other tools.
+
+        Paths resolve against the SERVER HOST filesystem, relative to the
+        server's allowed roots (see workbook_list for those roots). Absolute
+        paths are safest. If open fails, the error 'details' report the roots
+        searched and 'did_you_mean' near-matches — use them to correct the path
+        in one retry instead of guessing.
+
+        If the caller does NOT share the server's filesystem (e.g. a file
+        uploaded into a sandbox), skip 'path' and pass the raw bytes as
+        'content_base64' plus a 'filename' ending in .xlsx.
+        """
+        return tools.spreadsheet_open({"path": path, "content_base64": content_base64, "filename": filename})
+
+    @app.tool()
+    def workbook_list(glob: str | None = None, limit: int = 200) -> dict:
+        """List .xlsx workbooks under the server's allowed roots.
+
+        Call this first when you don't know where files live: it returns the
+        allowed 'root_paths' and matching 'workbooks' (path/size/modified), so
+        the next spreadsheet_open succeeds on the first try. 'glob' filters on
+        an fnmatch pattern (e.g. '*.xlsx', 'reports/*.xlsx').
+        """
+        return tools.workbook_list({"glob": glob, "limit": limit})
 
     @app.tool()
     def spreadsheet_describe(session_id: str, detail: str = "compact") -> dict:
@@ -68,6 +91,19 @@ def main() -> None:
 
     @app.tool()
     def spreadsheet_write(session_id: str, operations: list[dict], dry_run: bool = True) -> dict:
+        """Stage cell edits (dry_run=True previews; commit them with spreadsheet_commit).
+
+        Each operation is {"type", "sheet", ...}. Supported types and their fields:
+          - set_values:  {"type":"set_values","sheet":"Sheet1","start":"A1","values":[[1,2],[3,4]]}
+                         'start' is the top-left cell; 'values' is a row-major 2D array.
+          - set_formula: {"type":"set_formula","sheet":"Sheet1","cell":"C2","formula":"=A2*B2"}
+          - clear_range: {"type":"clear_range","sheet":"Sheet1","range":"A1:B10"}
+          - append_rows: {"type":"append_rows","sheet":"Sheet1","rows":[["x",1],["y",2]]}
+          - insert_rows: {"type":"insert_rows","sheet":"Sheet1","idx":5,"amount":1}
+          - delete_rows: {"type":"delete_rows","sheet":"Sheet1","idx":5,"amount":1}
+          - copy_range:  {"type":"copy_range","sheet":"Sheet1","source":"A1:B2","target":"D1"}
+        Rejected operations come back in 'rejected_operations' with a per-op code and message.
+        """
         return tools.spreadsheet_write({"session_id": session_id, "operations": operations, "dry_run": dry_run})
 
     @app.tool()

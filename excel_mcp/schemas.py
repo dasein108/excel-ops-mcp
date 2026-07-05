@@ -30,13 +30,31 @@ class BaseResponse(BaseModel):
 
 
 class SpreadsheetOpenRequest(BaseModel):
-    path: str
+    path: str | None = None
+    content_base64: str | None = None
+    filename: str | None = None
 
 
 class SpreadsheetOpenResponse(BaseResponse):
     path: str | None = None
     file_size: int | None = None
     mtime: float | None = None
+
+
+class WorkbookListRequest(BaseModel):
+    glob: str | None = None
+    limit: int = 200
+
+
+class WorkbookInfo(BaseModel):
+    path: str
+    size: int
+    modified: float
+
+
+class WorkbookListResponse(BaseResponse):
+    root_paths: list[str] = Field(default_factory=list)
+    workbooks: list[WorkbookInfo] = Field(default_factory=list)
 
 
 class SpreadsheetDescribeRequest(BaseModel):

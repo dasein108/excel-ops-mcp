@@ -40,6 +40,10 @@ def build_parser() -> argparse.ArgumentParser:
     open_parser = subparsers.add_parser("open", parents=[parent], help="Open an Excel workbook and return a session.")
     open_parser.add_argument("path")
 
+    list_parser = subparsers.add_parser("list", parents=[parent], help="List .xlsx workbooks under the allowed roots.")
+    list_parser.add_argument("--glob", default=None, help="fnmatch pattern, e.g. '*.xlsx' or 'reports/*.xlsx'.")
+    list_parser.add_argument("--limit", type=int, default=200)
+
     sheets = subparsers.add_parser("sheets", parents=[parent], help="List workbook sheets by path or session.")
     sheets.add_argument("target", nargs="?", help="Workbook path for stateless mode.")
     sheets.add_argument("--session", dest="session_id", help="Existing session id.")
@@ -102,6 +106,8 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
     tools = ExcelMcpTools(_config(args))
     if args.command == "open":
         return tools.spreadsheet_open({"path": args.path})
+    if args.command == "list":
+        return tools.workbook_list({"glob": args.glob, "limit": args.limit})
 
     if args.command == "sheets":
         session_id = _session_or_open(tools, args)

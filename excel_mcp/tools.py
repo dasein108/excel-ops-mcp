@@ -24,6 +24,9 @@ from excel_mcp.schemas import (
     SpreadsheetWriteRequest,
     SpreadsheetWriteResponse,
     Telemetry,
+    WorkbookInfo,
+    WorkbookListRequest,
+    WorkbookListResponse,
     error_response,
 )
 from excel_mcp.session import SessionRegistry
@@ -43,7 +46,13 @@ class ExcelMcpTools:
         try:
             request = payload if isinstance(payload, SpreadsheetOpenRequest) else SpreadsheetOpenRequest.model_validate(payload)
             request_path = request.path
-            path = self.path_policy.validate_input_file(request.path)
+            if request.content_base64 is not None:
+                path = self._materialize_upload(request.content_base64, request.filename)
+                request_path = str(path)
+            elif request.path:
+                path = self.path_policy.validate_input_file(request.path)
+            else:
+                return error_response("missing_source", "Provide either 'path' or 'content_base64'.")
             session, cache_hit = self.sessions.open(path)
             response = SpreadsheetOpenResponse(
                 ok=True,
@@ -56,7 +65,7 @@ class ExcelMcpTools:
             self._audit("open", response, {"path": request.path}, str(session.path), started)
             return response
         except PolicyError as exc:
-            response = error_response(exc.code, exc.message)
+            response = error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
             self._audit("open", response, {"path": request_path}, request_path, started)
             return response
         except Exception as exc:
@@ -100,7 +109,7 @@ class ExcelMcpTools:
             self._audit("query", response, {}, None, started)
             return response
         except PolicyError as exc:
-            response = error_response(exc.code, exc.message)
+            response = error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
             if session:
                 response["session_id"] = session.session_id
             self._audit("query", response, {"sql": getattr(locals().get("request", None), "sql", None)}, str(session.path) if session else None, started)
@@ -132,7 +141,7 @@ class ExcelMcpTools:
             self._audit("read-range", response, {}, None, started)
             return response
         except PolicyError as exc:
-            response = error_response(exc.code, exc.message)
+            response = error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
             if session:
                 response["session_id"] = session.session_id
             self._audit("read-range", response, {}, str(session.path) if session else None, started)
@@ -158,7 +167,7 @@ class ExcelMcpTools:
             self._audit("trace", response, {}, None, started)
             return response
         except PolicyError as exc:
-            response = error_response(exc.code, exc.message)
+            response = error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
             if session:
                 response["session_id"] = session.session_id
             self._audit("trace", response, {}, str(session.path) if session else None, started)
@@ -215,7 +224,7 @@ class ExcelMcpTools:
             self._audit("commit", response, {}, None, started)
             return response
         except PolicyError as exc:
-            response = error_response(exc.code, exc.message)
+            response = error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
             if session:
                 response["session_id"] = session.session_id
             self._audit("commit", response, {}, str(session.path) if session else None, started)
@@ -241,7 +250,7 @@ class ExcelMcpTools:
             self._audit("diff", response, {}, None, started)
             return response
         except PolicyError as exc:
-            response = error_response(exc.code, exc.message)
+            response = error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
             if session:
                 response["session_id"] = session.session_id
             self._audit("diff", response, {}, str(session.path) if session else None, started)
@@ -250,6 +259,45 @@ class ExcelMcpTools:
             response = error_response("diff_failed", str(exc))
             self._audit("diff", response, {}, str(session.path) if session else None, started)
             return response
+
+    def workbook_list(self, payload: dict[str, Any] | WorkbookListRequest | None = None) -> dict[str, Any]:
+        started = time.perf_counter()
+        try:
+            request = payload if isinstance(payload, WorkbookListRequest) else WorkbookListRequest.model_validate(payload or {})
+            workbooks = self.path_policy.list_workbooks(glob=request.glob, limit=request.limit)
+            response = WorkbookListResponse(
+                ok=True,
+                root_paths=[str(root) for root in self.config.normalized_allowed_roots()],
+                workbooks=[WorkbookInfo(**item) for item in workbooks],
+                telemetry=Telemetry(elapsed_ms=_elapsed_ms(started)),
+            ).model_dump()
+            self._audit("list", response, {"glob": request.glob}, None, started)
+            return response
+        except Exception as exc:
+            response = error_response("list_failed", str(exc))
+            self._audit("list", response, {}, None, started)
+            return response
+
+    def _materialize_upload(self, content_base64: str, filename: str | None) -> Path:
+        """Write uploaded bytes to the cache dir so path-only opens work for
+        clients that don't share the server host filesystem."""
+        import base64
+        import binascii
+        import hashlib
+
+        name = filename or "upload.xlsx"
+        if Path(name).suffix.lower() != ".xlsx":
+            raise PolicyError("unsupported_extension", "Uploaded filename must end in .xlsx.")
+        try:
+            raw = base64.b64decode(content_base64, validate=True)
+        except (binascii.Error, ValueError) as exc:
+            raise PolicyError("invalid_content", "content_base64 is not valid base64.") from exc
+        upload_dir = self.config.cache_dir / "uploads"
+        upload_dir.mkdir(parents=True, exist_ok=True)
+        digest = hashlib.sha256(raw).hexdigest()[:16]
+        target = upload_dir / f"{Path(name).stem}-{digest}.xlsx"
+        target.write_bytes(raw)
+        return target
 
     def audit_events(self, session_id: str | None = None, path: str | None = None, limit: int = 100) -> dict[str, Any]:
         return {"ok": True, "events": self.sessions.list_audit_events(session_id=session_id, path=path, limit=limit)}
