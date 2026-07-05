@@ -99,6 +99,27 @@ def build_parser() -> argparse.ArgumentParser:
     audit.add_argument("--path", dest="path", default=None)
     audit.add_argument("--limit", type=int, default=100)
 
+    inspect = subparsers.add_parser("inspect", parents=[parent], help="Describe/read/trace/summary by path or session.")
+    inspect.add_argument("target", nargs="?", help="Workbook path for stateless mode.")
+    inspect.add_argument("--session", dest="session_id", help="Existing session id.")
+    inspect.add_argument("--mode", choices=["describe", "read", "trace", "summary"], default="describe")
+    inspect.add_argument("--sheet", default=None)
+    inspect.add_argument("--range", default=None)
+    inspect.add_argument("--cell", default=None)
+    inspect.add_argument("--depth", type=int, default=1)
+    inspect.add_argument("--include", action="append", default=None)
+    inspect.add_argument("--detail", choices=["compact", "standard"], default="compact")
+    inspect.add_argument("--growth", action="store_true")
+
+    edit = subparsers.add_parser("edit", parents=[parent], help="Stage (and optionally commit) edits in one call.")
+    edit.add_argument("target", nargs="?", help="Workbook path for stateless mode.")
+    edit.add_argument("--session", dest="session_id", help="Existing session id.")
+    edit.add_argument("--ops", required=True, help="JSON operations array or path to JSON file.")
+    edit.add_argument("--commit", action="store_true", help="Commit after staging.")
+    edit.add_argument("--dry-run", action="store_true", help="Stage only; never write.")
+    edit.add_argument("--output", dest="output_path", default=None)
+    edit.add_argument("--overwrite", action="store_true")
+
     return parser
 
 
@@ -203,6 +224,18 @@ def dispatch(args: argparse.Namespace) -> dict[str, Any]:
 
     if args.command == "audit":
         return tools.audit_events(session_id=args.session_id, path=args.path, limit=args.limit)
+
+    if args.command == "inspect":
+        return tools.spreadsheet_inspect({
+            "path": args.target, "session_id": args.session_id, "mode": args.mode,
+            "sheet": args.sheet, "range": args.range, "cell": args.cell, "depth": args.depth,
+            "include": args.include, "detail": args.detail, "growth": args.growth})
+
+    if args.command == "edit":
+        return tools.spreadsheet_edit({
+            "path": args.target, "session_id": args.session_id, "operations": _load_ops(args.ops),
+            "dry_run": args.dry_run, "commit": args.commit, "output_path": args.output_path,
+            "overwrite": args.overwrite})
 
     return _error("unknown_command", args.command)
 
