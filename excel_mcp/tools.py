@@ -121,9 +121,17 @@ class ExcelMcpTools:
                 resp["telemetry"]["elapsed_ms"] = _elapsed_ms(started)
                 self._audit("summary", resp, {"sheet": payload.get("sheet"), "range": payload.get("range")}, str(session.path), started)
                 return resp
+            except PolicyError as exc:
+                resp = error_response(exc.code, exc.message, getattr(exc, "details", None) or None)
+                resp["session_id"] = session_id
+                return resp
             except Exception as exc:
-                return error_response("summary_failed", str(exc))
-        return error_response("invalid_mode", f"Unknown mode '{mode}'. Use describe|read|trace|summary.")
+                resp = error_response("summary_failed", str(exc))
+                resp["session_id"] = session_id
+                return resp
+        resp = error_response("invalid_mode", f"Unknown mode '{mode}'. Use describe|read|trace|summary.")
+        resp["session_id"] = session_id
+        return resp
 
     def spreadsheet_query(self, payload: dict[str, Any] | SpreadsheetQueryRequest) -> dict[str, Any]:
         started = time.perf_counter()

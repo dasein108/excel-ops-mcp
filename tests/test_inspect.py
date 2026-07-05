@@ -32,3 +32,21 @@ def test_inspect_bad_mode(tmp_path):
     resp = _tools(tmp_path).spreadsheet_inspect({"path": EXAMPLE, "mode": "wat"})
     assert resp["ok"] is False
     assert resp["error"]["code"] == "invalid_mode"
+
+
+def test_inspect_invalid_mode_echoes_session_id(tmp_path):
+    resp = _tools(tmp_path).spreadsheet_inspect({"path": EXAMPLE, "mode": "wat"})
+    assert resp["ok"] is False
+    assert resp["error"]["code"] == "invalid_mode"
+    assert resp["session_id"]
+
+
+def test_inspect_summary_bad_sheet_preserves_code(tmp_path):
+    tools = _tools(tmp_path)
+    described = tools.spreadsheet_inspect({"path": EXAMPLE, "mode": "describe"})
+    resp = tools.spreadsheet_inspect(
+        {"session_id": described["session_id"], "mode": "summary", "sheet": "NoSuchSheet", "range": "B5:F5"}
+    )
+    assert resp["ok"] is False
+    assert resp["session_id"]
+    assert resp["error"]["code"] != "summary_failed"
