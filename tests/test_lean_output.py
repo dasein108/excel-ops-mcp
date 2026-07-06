@@ -19,6 +19,9 @@ def test_read_range_truncates_large_range(tmp_path):
     resp = read_range(session, SpreadsheetReadRangeRequest(session_id=session.session_id, sheet="Revenue Model", range="A1:A50"), cfg)
     assert len(resp.cells) == 3
     assert resp.telemetry.truncated is True
+    # truncation reports the true total so a caller isn't blind to hidden rows
+    assert resp.telemetry.rows_returned == 3
+    assert resp.telemetry.rows_scanned == 50
 
 
 def test_read_range_full_bypasses_cap(tmp_path):

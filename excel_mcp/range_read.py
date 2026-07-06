@@ -72,7 +72,8 @@ def read_range(
                 "Prefer 'query' or 'describe' over repeated small range reads."
             )
 
-    truncated = not full and len(rows) > config.read_row_limit
+    total_rows = len(rows)
+    truncated = not full and total_rows > config.read_row_limit
     if truncated:
         rows = rows[: config.read_row_limit]
 
@@ -82,4 +83,5 @@ def read_range(
     if truncated:
         response.telemetry.truncated = True
         response.telemetry.rows_returned = config.read_row_limit
+        response.telemetry.rows_scanned = total_rows
     return response
