@@ -15,8 +15,14 @@ if (-not (Get-Command uvx -ErrorAction SilentlyContinue)) {
 
 # uvx caches resolved versions; clear the cached excel-ops-mcp so this run — and
 # the server that agents launch via `uvx excel-ops-mcp` — uses the latest release.
-Write-Host "excel-ops-mcp: updating to the latest published version..."
+Write-Host "excel-ops-mcp: checking for the latest published version..."
 uv cache clean excel-ops-mcp 2>$null
 
+# Resolve + report the version that will be installed (also warms the cache).
+$version = (uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" `
+  python -c "import importlib.metadata as m; print(m.version('excel-ops-mcp'))" 2>$null)
+if ($version) { Write-Host "excel-ops-mcp: installing version $version" }
+else { Write-Host "excel-ops-mcp: installing the latest version" }
+
 Write-Host "excel-ops-mcp: launching installer..."
-uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" excel-ops-mcp-install $args
+uvx --from "excel-ops-mcp[install]" excel-ops-mcp-install $args

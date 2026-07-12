@@ -19,8 +19,18 @@ fi
 # uvx caches resolved versions, so a plain re-run keeps using the old release.
 # Clear the cached excel-ops-mcp so this run — and the server that agents launch
 # via `uvx excel-ops-mcp` — picks up the latest published version.
-echo "excel-ops-mcp: updating to the latest published version..."
+echo "excel-ops-mcp: checking for the latest published version..."
 uv cache clean excel-ops-mcp >/dev/null 2>&1 || true
+
+# Resolve + report the version that will be installed (this also warms the cache,
+# so the installer launch below reuses the same environment).
+VERSION=$(uvx --refresh-package excel-ops-mcp --from "excel-ops-mcp[install]" \
+  python -c "import importlib.metadata as m; print(m.version('excel-ops-mcp'))" 2>/dev/null || true)
+if [ -n "$VERSION" ]; then
+  echo "excel-ops-mcp: installing version $VERSION"
+else
+  echo "excel-ops-mcp: installing the latest version"
+fi
 
 echo "excel-ops-mcp: launching installer..."
 # Interactive picker needs a terminal on stdin. When stdin is already a terminal
