@@ -165,6 +165,71 @@ to a new file by default and never overwrite the source unless you ask.
 
 ## MCP Tools
 
+The current surface is four consolidated verbs. Each accepts a `path` (the server
+auto-opens it) **or** a `session_id` from a prior call **or** raw bytes as
+`content_base64` + `filename` (for hosts that don't share the server's
+filesystem, e.g. a sandbox). The per-tool sections further down (`spreadsheet_open`,
+`spreadsheet_describe`, `spreadsheet_read_range`, `spreadsheet_trace`,
+`spreadsheet_write`, `spreadsheet_diff`, `spreadsheet_commit`) are **deprecated
+shims** kept for compatibility — prefer the four verbs below.
+
+### `spreadsheet_list`
+
+List `.xlsx` workbooks under the server's allowed roots — call it first when you
+don't know where files live. Returns `root_paths` and matching `workbooks`
+(path/size/modified). `glob` filters with an fnmatch pattern (e.g. `reports/*.xlsx`).
+
+### `spreadsheet_inspect`
+
+Read a workbook. `mode` selects the view; pass `path` or `session_id` (or base64):
+
+- `mode: "describe"` — sheets, detected regions, SQL table names, plus a
+  `best_source` hint ranking the cleanest sheet first. `detail: "standard"` adds
+  sample rows.
+- `mode: "summary"` — the server computes `total` / `mean` / `min` / `max` over
+  `sheet`+`range` (add `growth: true` for `yoy_growth_pct`), so you never sum
+  cells yourself.
+- `mode: "read"` — raw cells for `sheet`+`range` (`include: ["values","formulas",…]`).
+- `mode: "trace"` — formula precedents for `sheet`+`cell` up to `depth` levels.
+
+```json
+{ "mode": "summary", "path": "/path/to/workbook.xlsx", "sheet": "Revenue Model", "range": "B23:M23" }
+```
+
+### `spreadsheet_query`
+
+Run read-only DuckDB SQL over detected regions. Pass `path` (auto-opens) or `session_id`.
+
+```json
+{ "path": "/path/to/workbook.xlsx", "sql": "select line_item, jan from \"revenue_model_table_1\" limit 5" }
+```
+
+Mutation statements are rejected — writes go through `spreadsheet_edit`.
+
+### `spreadsheet_edit`
+
+Apply cell edits in one call. Pass `path` or `session_id` and a list of
+`operations` (same shapes as the legacy `spreadsheet_write`: `set_values`,
+`set_formula`, `clear_range`, `append_rows`, `insert_rows`, `delete_rows`,
+`copy_range`).
+
+- `dry_run: true` — preview only: stages, returns the diff, writes nothing.
+- `dry_run: false, commit: true` (default) — stage **and** commit in one call,
+  returning `output_path` and `changes`. Saves to a new file by default; source
+  overwrite requires `overwrite: true`. Rejected operations abort the commit.
+
+```json
+{
+  "path": "/path/to/workbook.xlsx",
+  "operations": [{ "type": "set_values", "sheet": "Ops", "start": "E2", "values": [["reviewed"]] }],
+  "dry_run": true
+}
+```
+
+---
+
+The sections below document the underlying (deprecated) tools.
+
 ### `spreadsheet_open`
 
 Open a local `.xlsx` workbook and return a session ID.
@@ -341,7 +406,16 @@ The `excel-ops` CLI exposes the same engine without starting an MCP server.
 
 ### Command Reference
 
-Every base command, and the MCP tool it mirrors:
+Recommended verbs (mirror the consolidated MCP tools):
+
+| CLI command | MCP tool | Purpose |
+| --- | --- | --- |
+| `excel-ops list [--glob '*.xlsx']` | `spreadsheet_list` | List workbooks under the allowed roots |
+| `excel-ops inspect <file.xlsx> --mode describe\|read\|trace\|summary` | `spreadsheet_inspect` | Describe / read a range / trace formulas / summarize (`--sheet --range --cell --depth --growth`) |
+| `excel-ops edit <file.xlsx> --ops ops.json [--dry-run] [--output new.xlsx]` | `spreadsheet_edit` | Stage + commit cell edits in one call (`--dry-run` previews) |
+| `excel-ops query <file.xlsx> --sql "..."` | `spreadsheet_query` | Run read-only DuckDB SQL |
+
+Underlying / legacy commands (kept for compatibility):
 
 | CLI command | MCP tool | Purpose |
 | --- | --- | --- |
@@ -349,7 +423,6 @@ Every base command, and the MCP tool it mirrors:
 | `excel-ops sheets <file.xlsx>` | `spreadsheet_describe` (compact) | List worksheet names |
 | `excel-ops tables <file.xlsx>` | `spreadsheet_describe` | List detected SQL table names and columns |
 | `excel-ops describe <file.xlsx>` | `spreadsheet_describe` | Full structure (add `--detail standard` for sample rows) |
-| `excel-ops query <file.xlsx> --sql "..."` | `spreadsheet_query` | Run read-only DuckDB SQL |
 | `excel-ops read-range <file.xlsx> --sheet S --range A1:B10` | `spreadsheet_read_range` | Inspect exact cells, formulas, or formatting |
 | `excel-ops trace <file.xlsx> --sheet S --cell B5 --depth 2` | `spreadsheet_trace` | Trace a cell's formula lineage (precedents) |
 | `excel-ops write --session ses --ops ops.json` | `spreadsheet_write` | Stage write operations (dry-run) |
